@@ -125,7 +125,8 @@ Profile URL: {data['html_url']}
 """
 
 # Create ASGI application
-app = mcp.http_app()
+# transport: Literal["http", "streamable-http", "sse"]
+app = mcp.http_app(transport='streamable-http')
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')

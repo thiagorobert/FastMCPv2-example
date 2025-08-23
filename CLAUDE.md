@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Application
 - MCP server (stdio): `uv run fastmcpv2_example.py`
-- HTTP server: `./run_asgi.sh` or `uvicorn fastmcpv2_example:app --host 0.0.0.0 --port 8080`
+- HTTPS server: `./run_asgi.sh` or `python run_https.py` 
+- HTTP server (insecure): `uvicorn fastmcpv2_example:app --host 0.0.0.0 --port 8080`
 - Test MCP integration: `./test_mcp_using_claude.sh`
 
 ### Dependencies
@@ -31,7 +32,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Built on FastMCP v2 framework for creating MCP (Model Context Protocol) servers
 - Provides GitHub API integration via OAuth token authentication
 - Exposes 3 main MCP tools: `list_repositories`, `get_repository_info`, `get_user_info`
-- Dual transport support: stdio (for MCP clients) and HTTP/ASGI (web API)
+- Dual transport support: stdio (for MCP clients) and HTTPS/ASGI (web API)
+- HTTPS support with TLS certificates from `tls_data/` directory
 
 **Authentication Flow**
 - Token-based authentication using `github_token.json` file
@@ -49,7 +51,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `test_fastmcpv2_example.py`: Comprehensive unit tests using FastMCP's in-memory testing
 - `mcp_config.json`: MCP client configuration for testing with Claude CLI
 - `github_token.json`: GitHub personal access token storage (sensitive)
-- `run_asgi.sh`: HTTP server startup script
+- `run_asgi.sh`: HTTPS server startup script
+- `run_https.py`: Python-based HTTPS server runner with SSL configuration
+- `tls_data/`: Directory containing TLS certificate (`server.crt`) and private key (`server.key`)
 
 ### Testing Strategy
 
