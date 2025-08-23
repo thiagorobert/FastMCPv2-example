@@ -1,0 +1,13 @@
+# dev environment
+__pycache__
+uv.lock
+.python-version
+.coverage
+tf/
+scripts/
+.venv
+
+# local secrets
+.env
+github_token.json
+tls_data/

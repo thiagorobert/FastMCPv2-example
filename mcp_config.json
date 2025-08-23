@@ -1,0 +1,13 @@
+{
+	"mcpServers": {
+		"github_oauth_example": {
+			"command": "uv",
+			"args": [
+				"--directory",
+				"/workspace/github/FastMCPv2-example",
+				"run",
+				"fastmcpv2_example.py"
+			]
+		}
+	}
+}
