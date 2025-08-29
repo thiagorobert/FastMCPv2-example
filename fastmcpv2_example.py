@@ -1,6 +1,9 @@
 import httpx
 import json
 from fastmcp import FastMCP
+from fastmcp.server.auth import RemoteAuthProvider
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+from pydantic import AnyHttpUrl
 from typing import Any
 from starlette.responses import JSONResponse
 
@@ -8,13 +11,52 @@ GITHUB_API_BASE = "https://api.github.com"
 USER_AGENT = "github-oauth-mcp/1.0"
 TOKEN_FILE = "github_token.json"  # Token storage file
 
-# FastMCP server
-mcp = FastMCP("github_oauth_example")
+# Configure Auth0 authentication
+auth0_domain = "https://rfc7591-test.us.auth0.com"
+
+# Configure token validation for Auth0
+token_verifier = JWTVerifier(
+    jwks_uri=f"{auth0_domain}/.well-known/jwks.json",
+    issuer=auth0_domain,
+    audience="mcp-production-api"
+)
+
+# Create the remote auth provider
+auth = RemoteAuthProvider(
+    token_verifier=token_verifier,
+    authorization_servers=[AnyHttpUrl(auth0_domain)],
+    resource_server_url="https://api.yourcompany.com"
+)
+
+# FastMCP server with authentication
+mcp = FastMCP("github_oauth_example", auth=auth)
 
 # Health check
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(_request):
     return JSONResponse({"status": "healthy", "service": "github_oauth_example"})
+
+# OAuth Authorization Server Metadata endpoint
+@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
+async def oauth_authorization_server(_request):
+    """OAuth 2.0 Authorization Server Metadata endpoint (RFC 8414)"""
+    metadata = {
+        "issuer": auth0_domain,
+        "authorization_endpoint": f"{auth0_domain}/authorize",
+        "token_endpoint": f"{auth0_domain}/oauth/token",
+        "jwks_uri": f"{auth0_domain}/.well-known/jwks.json",
+        "userinfo_endpoint": f"{auth0_domain}/userinfo",
+        "response_types_supported": ["code", "token", "id_token", "code token", "code id_token", "token id_token", "code token id_token"],
+        "grant_types_supported": ["authorization_code", "implicit", "refresh_token", "client_credentials"],
+        "subject_types_supported": ["public"],
+        "id_token_signing_alg_values_supported": ["RS256"],
+        "scopes_supported": ["openid", "profile", "email"],
+        "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"],
+        "claims_supported": ["sub", "iss", "aud", "exp", "iat", "auth_time", "nonce", "name", "email", "email_verified"],
+
+        "registration_endpoint": f"{auth0_domain}/oidc/register"
+    }
+    return JSONResponse(metadata)
 
 
 def load_token() -> str:
