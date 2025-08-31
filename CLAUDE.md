@@ -12,11 +12,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Exposes 3 main MCP tools: `list_repositories`, `get_repository_info`, `get_user_info`
 - Dual transport support: stdio (for MCP clients) and HTTPS/ASGI (web API)
 - HTTPS support with TLS certificates from `tls_data/` directory
+- Configurable auth provider support: Auth0 (default) or Keycloak via `AUTH_PROVIDER` environment variable
+
+**Auth Provider Module (`auth_provider.py`)**
+- Abstracted OAuth authentication logic for Auth0 and Keycloak providers
+- Factory pattern for creating appropriate auth providers based on configuration
+- Centralized OAuth metadata URL generation
+
+**GitHub API Module (`github_api.py`)**
+- GitHub API integration with token handling and HTTP client management
+- Token file loading and validation
+- API request functions with error handling
 
 **Authentication Flow**
-- Token-based authentication using `github_token.json` file
-- No OAuth flow implemented - requires pre-existing GitHub personal access token
-- Token loaded via `load_token()` function at tool execution time
+- Dual OAuth provider support: Auth0 (default) and Keycloak
+- Provider selection via `AUTH_PROVIDER` environment variable
+- GitHub API access via token-based authentication using `github_token.json` file
+- Token loaded via `github_api.load_token()` function at tool execution time
 
 **MCP Tools Architecture**
 - Each tool follows pattern: authenticate → make API request → format response
@@ -60,7 +72,10 @@ The server can be consumed by MCP clients (like Claude) using the configuration 
 ### Running the MCP server
 - MCP server (stdio): `uv run fastmcpv2_example.py`
 - HTTP server: `./run_asgi.sh --http` 
-- HTTPs server: `./run_asgi.sh --https` 
+- HTTPS server: `./run_asgi.sh --https` 
+- With Keycloak auth: `./run_asgi.sh --auth-provider keycloak`
+- HTTP with Keycloak: `./run_asgi.sh --http --auth-provider keycloak`
+- Set auth provider via env: `AUTH_PROVIDER=keycloak uv run fastmcpv2_example.py`
 - Test MCP integration: `./test_mcp_using_claude.sh`
 
 ## Directives for Claude
