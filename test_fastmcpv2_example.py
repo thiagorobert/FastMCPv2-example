@@ -4,7 +4,8 @@ import tempfile
 import os
 from unittest.mock import AsyncMock, patch, mock_open, MagicMock
 from fastmcp import Client
-from fastmcpv2_example import mcp, make_github_request, load_token
+from fastmcpv2_example import mcp
+from github_api import make_github_request, load_token
 
 
 class TestFastMCPv2Example:
@@ -60,7 +61,7 @@ class TestFastMCPv2Example:
 
     def test_load_token_success(self, mock_token_file):
         """Test successful token loading."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
+        with patch('github_api.TOKEN_FILE', mock_token_file):
             token = load_token()
             assert token == "test_token_123"
         
@@ -112,8 +113,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_list_repositories_tool(self, mock_token_file, mock_github_api_response):
         """Test list_repositories tool using in-memory testing."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_repos"]
                 
                 # Use in-memory testing with FastMCP Client
@@ -131,8 +132,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_list_repositories_no_data(self, mock_token_file):
         """Test list_repositories tool when no data is returned."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
                 
                 async with Client(mcp) as client:
@@ -145,8 +146,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_get_repository_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_repository_info tool using in-memory testing."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["repo_info"]
                 
                 async with Client(mcp) as client:
@@ -166,8 +167,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_get_repository_info_no_data(self, mock_token_file):
         """Test get_repository_info tool when no data is returned."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
                 
                 async with Client(mcp) as client:
@@ -183,8 +184,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_get_user_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_user_info tool using in-memory testing."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_info"]
                 
                 async with Client(mcp) as client:
@@ -201,8 +202,8 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_get_user_info_no_data(self, mock_token_file):
         """Test get_user_info tool when no data is returned."""
-        with patch('fastmcpv2_example.TOKEN_FILE', mock_token_file):
-            with patch('fastmcpv2_example.make_github_request') as mock_request:
+        with patch('github_api.TOKEN_FILE', mock_token_file):
+            with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
                 
                 async with Client(mcp) as client:
@@ -215,7 +216,7 @@ class TestFastMCPv2Example:
     @pytest.mark.asyncio
     async def test_tools_with_authentication_failure(self):
         """Test tools behavior when token loading fails."""
-        with patch('fastmcpv2_example.load_token') as mock_load_token:
+        with patch('github_api.load_token') as mock_load_token:
             mock_load_token.side_effect = RuntimeError("Token file not found")
             
             async with Client(mcp) as client:
