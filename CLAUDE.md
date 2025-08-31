@@ -2,28 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
-
-### Testing
-- Run all tests: `uv run pytest test_fastmcpv2_example.py`
-- Run specific test: `uv run pytest test_fastmcpv2_example.py::TestFastMCPv2Example::test_load_token_success`
-- Run with coverage: `uv run pytest test_fastmcpv2_example.py --cov=fastmcpv2_example --cov-report=term-missing`
-
-### Code Quality
-- Lint code: `uv run ruff check .`
-- Auto-fix lint issues: `uv run ruff check . --fix`
-- Check for dead code: `uv run vulture .`
-
-### Running the Application
-- MCP server (stdio): `uv run fastmcpv2_example.py`
-- HTTPS server: `./run_asgi.sh` or `python run_https.py` 
-- HTTP server (insecure): `uvicorn fastmcpv2_example:app --host 0.0.0.0 --port 8080`
-- Test MCP integration: `./test_mcp_using_claude.sh`
-
-### Dependencies
-- Add runtime dependency: `uv add <package>`
-- Add dev dependency: `uv add --dev <package>`
-
 ## Architecture
 
 ### Core Components
@@ -66,6 +44,24 @@ Uses FastMCP's [in-memory testing](https://gofastmcp.com/deployment/testing) app
 ### MCP Integration
 
 The server can be consumed by MCP clients (like Claude) using the configuration in `mcp_config.json`. The test script `test_mcp_using_claude.sh` demonstrates integration with Claude CLI, forcing tool usage with specific prompts to avoid Claude bypassing the MCP.
+
+## Development Commands
+
+### Testing
+- Run all tests: `uv run pytest test_fastmcpv2_example.py`
+- Run specific test: `uv run pytest test_fastmcpv2_example.py::TestFastMCPv2Example::test_load_token_success`
+- Run with coverage: `uv run pytest test_fastmcpv2_example.py --cov=fastmcpv2_example --cov-report=term-missing`
+
+### Code Quality
+- Lint code: `uv run ruff check .`
+- Auto-fix lint issues: `uv run ruff check . --fix`
+- Check for dead code: `uv run vulture .`
+
+### Running the MCP server
+- MCP server (stdio): `uv run fastmcpv2_example.py`
+- HTTP server: `./run_asgi.sh --http` 
+- HTTPs server: `./run_asgi.sh --https` 
+- Test MCP integration: `./test_mcp_using_claude.sh`
 
 ## Directives for Claude
 
