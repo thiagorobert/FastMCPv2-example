@@ -18,7 +18,9 @@ CALBACK_PORT = 8082
 OAUTH = OAuth(client_name=f"client_{STAMP}",
               mcp_url=f"{SERVER_URL}/mcp",
               callback_port=CALBACK_PORT,
-              token_storage_cache_dir=pathlib.Path(".fastmcp/oauth-mcp-client-cache"),
+              # Make the cache directory unique when testing dynamic client creation
+              # to avoid re-using credentials for preexisting clients
+              token_storage_cache_dir=pathlib.Path(f".fastmcp/oauth-mcp-client-cache/{STAMP}"),
               # This is only relevant for the Auth0 flow. Without audience set, Auth0 issues
               # opaue access_tokens (not jwt)
               additional_client_metadata={"audience": "aud"},

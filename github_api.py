@@ -18,7 +18,7 @@ def load_token() -> str:
     token = os.getenv("GITHUB_ACCESS_TOKEN")
     if not token:
         raise RuntimeError("GITHUB_ACCESS_TOKEN environment variable is required")
-    
+
     logger.info("Token loaded from GITHUB_ACCESS_TOKEN environment variable")
     return token
 
