@@ -1,0 +1,108 @@
+--- .venv/lib/python3.12/site-packages/mcp/client/auth.py.orig	2025-08-30 10:03:01.531489150 -0700
++++ .venv/lib/python3.12/site-packages/mcp/client/auth.py	2025-08-31 19:21:08.086044416 -0700
+@@ -290,9 +290,17 @@
+             registration_url = urljoin(auth_base_url, "/register")
+ 
+         registration_data = self.context.client_metadata.model_dump(by_alias=True, mode="json", exclude_none=True)
++        
++        # Add Keycloak initial access token to headers if available
++        headers = {"Content-Type": "application/json"}
++        
++        import os
++        initial_access_token = os.getenv("KEYCLOAK_INITIAL_ACCESS_TOKEN")
++        if initial_access_token:
++            headers["Authorization"] = f"Bearer {initial_access_token}"
+ 
+         return httpx.Request(
+-            "POST", registration_url, json=registration_data, headers={"Content-Type": "application/json"}
++            "POST", registration_url, json=registration_data, headers=headers
+         )
+ 
+     async def _handle_registration_response(self, response: httpx.Response) -> None:
+@@ -332,6 +340,10 @@
+             "code_challenge": pkce_params.code_challenge,
+             "code_challenge_method": "S256",
+         }
++        
++        # Add audience if provided in client metadata (so Auth0 issues jwt tokens)
++        if self.context.client_metadata.audience:
++            auth_params["audience"] = self.context.client_metadata.audience
+ 
+         # Only include resource param if conditions are met
+         if self.context.should_include_resource_param(self.context.protocol_version):
+--- .venv/lib/python3.12/site-packages/mcp/client/streamable_http.py.orig	2025-08-30 10:03:01.595494004 -0700
++++ .venv/lib/python3.12/site-packages/mcp/client/streamable_http.py	2025-08-31 19:09:23.017826052 -0700
+@@ -427,7 +427,10 @@
+             headers = self._prepare_request_headers(self.request_headers)
+             response = await client.delete(self.url, headers=headers)
+ 
+-            if response.status_code == 405:
++            # To prevent an error in the client.
++            if response.status_code == 404:
++                logger.debug("Session already terminated")
++            elif response.status_code == 405:
+                 logger.debug("Server does not allow session termination")
+             elif response.status_code not in (200, 204):
+                 logger.warning(f"Session termination failed: {response.status_code}")
+--- .venv/lib/python3.12/site-packages/mcp/shared/auth.py.orig	2025-08-31 18:33:03.422951261 -0700
++++ .venv/lib/python3.12/site-packages/mcp/shared/auth.py	2025-08-31 19:14:50.218426799 -0700
+@@ -44,15 +44,15 @@
+     redirect_uris: list[AnyUrl] = Field(..., min_length=1)
+     # token_endpoint_auth_method: this implementation only supports none &
+     # client_secret_post;
+-    # ie: we do not support client_secret_basic
+-    token_endpoint_auth_method: Literal["none", "client_secret_post"] = "client_secret_post"
++    # ie: we do not support client_secret_basic (changed it for Keycloak)
++    token_endpoint_auth_method: Literal["none", "client_secret_post", "client_secret_basic"] = "client_secret_post"
+     # grant_types: this implementation only supports authorization_code & refresh_token
+     grant_types: list[Literal["authorization_code", "refresh_token"]] = [
+         "authorization_code",
+         "refresh_token",
+     ]
+-    # this implementation only supports code; ie: it does not support implicit grants
+-    response_types: list[Literal["code"]] = ["code"]
++    # this implementation only supports code; ie: it does not support implicit grants (changed it for keycloak)
++    response_types: list[Literal["none", "code"]] = ["code"]
+     scope: str | None = None
+ 
+     # these fields are currently unused, but we support & store them for potential
+@@ -67,6 +67,8 @@
+     jwks: Any | None = None
+     software_id: str | None = None
+     software_version: str | None = None
++    # To work around the problem that without audience Auth0 tokens are opaque (not jwt)
++    audience: str | None = None
+ 
+     def validate_scope(self, requested_scope: str | None) -> list[str] | None:
+         if requested_scope is None:
+@@ -89,6 +91,17 @@
+         else:
+             raise InvalidRedirectUriError("redirect_uri must be specified when client has multiple registered URIs")
+ 
++    # To avoid error when using Keycloak
++    # RuntimeError: Client failed to connect: Registration failed: 403 {"error":"insufficient_scope","error_description":"Policy 'Allowed Client Scopes' rejected request to client-registration service. Details: Not permitted to use specified clientScope"}    
++    def model_dump(self, **kwargs):
++        """Custom model dump that provides minimal payload for Keycloak compatibility."""
++        data = super().model_dump(**kwargs)
++        minimal_data = {
++            "client_name": data.get("client_name"),
++            "redirect_uris": data.get("redirect_uris")
++        }
++        return minimal_data
++
+ 
+ class OAuthClientInformationFull(OAuthClientMetadata):
+     """
+--- .venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py.orig	2025-08-30 10:03:01.973522671 -0700
++++ .venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py	2025-08-31 19:19:50.355253023 -0700
+@@ -321,8 +321,8 @@
+                 return self._jwks_cache[kid]
+             else:
+                 # No kid in token - only allow if there's exactly one key
+-                if len(self._jwks_cache) == 1:
+-                    return next(iter(self._jwks_cache.values()))
++                if len(self._jwks_cache) == 2:
++                    return list(self._jwks_cache.values())[1]
+                 elif len(self._jwks_cache) > 1:
+                     raise ValueError(
+                         "Multiple keys in JWKS but no key ID (kid) in token"
