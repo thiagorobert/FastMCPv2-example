@@ -10,5 +10,4 @@ scripts/
 # local secrets
 .env
 .fastmcp
-github_token.json
 tls_data/

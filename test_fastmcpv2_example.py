@@ -2,7 +2,7 @@ import pytest
 import json
 import tempfile
 import os
-from unittest.mock import AsyncMock, patch, mock_open, MagicMock
+from unittest.mock import AsyncMock, patch, MagicMock
 from fastmcp import Client
 from fastmcpv2_example import mcp
 from github_api import make_github_request, load_token
@@ -61,43 +61,40 @@ class TestFastMCPv2Example:
 
     def test_load_token_success(self, mock_token_file):
         """Test successful token loading."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             token = load_token()
             assert token == "test_token_123"
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     def test_load_token_missing_access_token(self):
         """Test token loading with missing access_token key."""
-        invalid_token_data = {"invalid_key": "value"}
-        mock_file_content = json.dumps(invalid_token_data)
-        
-        with patch('builtins.open', mock_open(read_data=mock_file_content)):
-            with pytest.raises(RuntimeError, match="Github access token expected"):
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(RuntimeError, match="GITHUB_ACCESS_TOKEN environment variable is required"):
                 load_token()
 
     @pytest.mark.asyncio
     async def test_make_github_request_success(self):
         """Test successful GitHub API request."""
         mock_response_data = {"test": "data"}
-        
+
         with patch('httpx.AsyncClient') as mock_client_class:
             # Create mock response
             mock_response = MagicMock()
             mock_response.json.return_value = mock_response_data
             mock_response.raise_for_status.return_value = None
-            
+
             # Create mock client instance
             mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
-            
+
             # Set up the async context manager
             mock_client_context = AsyncMock()
             mock_client_context.__aenter__.return_value = mock_client_instance
             mock_client_context.__aexit__.return_value = None
             mock_client_class.return_value = mock_client_context
-            
+
             result = await make_github_request("https://api.github.com/test", "test_token")
             assert result == mock_response_data
 
@@ -106,127 +103,127 @@ class TestFastMCPv2Example:
         """Test GitHub API request failure."""
         with patch('httpx.AsyncClient') as mock_client:
             mock_client.return_value.__aenter__.return_value.get.side_effect = Exception("Network error")
-            
+
             result = await make_github_request("https://api.github.com/test", "test_token")
             assert result is None
 
     @pytest.mark.asyncio
     async def test_list_repositories_tool(self, mock_token_file, mock_github_api_response):
         """Test list_repositories tool using in-memory testing."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_repos"]
-                
+
                 # Use in-memory testing with FastMCP Client
                 async with Client(mcp) as client:
                     result = await client.call_tool("list_repositories", {})
-                    
+
                     assert "testuser/test-repo" in result.data
                     assert "A test repository" in result.data
                     assert "Python" in result.data
                     assert "42" in result.data
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_list_repositories_no_data(self, mock_token_file):
         """Test list_repositories tool when no data is returned."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
-                
+
                 async with Client(mcp) as client:
                     result = await client.call_tool("list_repositories", {})
                     assert result.data == "Unable to fetch repositories."
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_get_repository_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_repository_info tool using in-memory testing."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["repo_info"]
-                
+
                 async with Client(mcp) as client:
                     result = await client.call_tool("get_repository_info", {
                         "owner": "testuser",
                         "repo": "test-repo"
                     })
-                    
+
                     assert "testuser/test-repo" in result.data
                     assert "A test repository" in result.data
                     assert "Forks: 5" in result.data
                     assert "Issues: 2" in result.data
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_get_repository_info_no_data(self, mock_token_file):
         """Test get_repository_info tool when no data is returned."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
-                
+
                 async with Client(mcp) as client:
                     result = await client.call_tool("get_repository_info", {
                         "owner": "testuser",
                         "repo": "test-repo"
                     })
                     assert "Unable to fetch information for repository testuser/test-repo." in result.data
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_get_user_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_user_info tool using in-memory testing."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_info"]
-                
+
                 async with Client(mcp) as client:
                     result = await client.call_tool("get_user_info", {})
-                    
+
                     assert "Username: testuser" in result.data
                     assert "Name: Test User" in result.data
                     assert "Email: test@example.com" in result.data
                     assert "Public Repos: 10" in result.data
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_get_user_info_no_data(self, mock_token_file):
         """Test get_user_info tool when no data is returned."""
-        with patch('github_api.TOKEN_FILE', mock_token_file):
+        with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
             with patch('github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
-                
+
                 async with Client(mcp) as client:
                     result = await client.call_tool("get_user_info", {})
                     assert result.data == "Unable to fetch user information."
-        
+
         # Clean up
         os.unlink(mock_token_file)
 
     @pytest.mark.asyncio
     async def test_tools_with_authentication_failure(self):
         """Test tools behavior when token loading fails."""
-        with patch('github_api.load_token') as mock_load_token:
-            mock_load_token.side_effect = RuntimeError("Token file not found")
-            
+        with patch.dict(os.environ, {}, clear=True):
+            # This will cause load_token() to fail since GITHUB_ACCESS_TOKEN is not set
+
             async with Client(mcp) as client:
                 # Test list_repositories - should raise RuntimeError due to token failure
                 try:
                     await client.call_tool("list_repositories", {})
                     assert False, "Expected RuntimeError to be raised"
                 except Exception as e:
-                    assert "Token file not found" in str(e)
-                
+                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
+
                 # Test get_repository_info - should raise RuntimeError due to token failure
                 try:
                     await client.call_tool("get_repository_info", {
@@ -235,14 +232,14 @@ class TestFastMCPv2Example:
                     })
                     assert False, "Expected RuntimeError to be raised"
                 except Exception as e:
-                    assert "Token file not found" in str(e)
-                
+                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
+
                 # Test get_user_info - should raise RuntimeError due to token failure
                 try:
                     await client.call_tool("get_user_info", {})
                     assert False, "Expected RuntimeError to be raised"
                 except Exception as e:
-                    assert "Token file not found" in str(e)
+                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
 
 
 if __name__ == "__main__":

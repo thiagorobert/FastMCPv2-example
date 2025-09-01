@@ -1,26 +1,26 @@
 import httpx
-import json
+import os
+import logging
 from typing import Any
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 GITHUB_API_BASE = "https://api.github.com"
 USER_AGENT = "github-oauth-mcp/1.0"
-TOKEN_FILE = "github_token.json"
+
+logger = logging.getLogger(__name__)
 
 
 def load_token() -> str:
-    """Load access github access token from file."""
-    with open(TOKEN_FILE, 'r') as f:
-        token_data = json.load(f)
+    """Load GitHub access token from environment variable."""
+    token = os.getenv("GITHUB_ACCESS_TOKEN")
+    if not token:
+        raise RuntimeError("GITHUB_ACCESS_TOKEN environment variable is required")
     
-    # Check if token exists
-    if "access_token" not in token_data:
-        raise RuntimeError(f"Github access token expected in {TOKEN_FILE}")
-
-    # TODO: check if token is expired
-
-    print(f"Token loaded from {TOKEN_FILE}")
-    return token_data["access_token"]
+    logger.info("Token loaded from GITHUB_ACCESS_TOKEN environment variable")
+    return token
 
 
 async def make_github_request(url: str, token: str = None) -> dict[str, Any] | None:
@@ -31,26 +31,26 @@ async def make_github_request(url: str, token: str = None) -> dict[str, Any] | N
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    
+
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(url, headers=headers, timeout=30.0)
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            print(f"GitHub API request failed: {e}")
+            logger.error(f"GitHub API request failed: {e}")
             return None
 
 
 async def list_repositories() -> str:
     """List all repositories accessible to the authenticated user."""
-    
+
     url = f"{GITHUB_API_BASE}/user/repos"
     data = await make_github_request(url, load_token())
-    
+
     if not data:
         return "Unable to fetch repositories."
-    
+
     repos = []
     for repo in data:
         repo_info = f"""
@@ -62,24 +62,24 @@ Private: {repo['private']}
 URL: {repo['html_url']}
 """
         repos.append(repo_info)
-    
+
     return "\n---\n".join(repos)
 
 
 async def get_repository_info(owner: str, repo: str) -> str:
     """Get detailed information about a specific repository.
-    
+
     Args:
         owner: Repository owner (username or organization)
         repo: Repository name
     """
-    
+
     url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}"
     data = await make_github_request(url, load_token())
-    
+
     if not data:
         return f"Unable to fetch information for repository {owner}/{repo}."
-    
+
     return f"""
 Repository: {data['full_name']}
 Description: {data.get('description', 'No description')}
@@ -96,13 +96,13 @@ Clone URL: {data['clone_url']}
 
 
 async def get_user_info() -> str:
-    """Get information about the authenticated user."""    
+    """Get information about the authenticated user."""
     url = f"{GITHUB_API_BASE}/user"
     data = await make_github_request(url, load_token())
-    
+
     if not data:
         return "Unable to fetch user information."
-    
+
     return f"""
 Username: {data['login']}
 Name: {data.get('name', 'Not set')}

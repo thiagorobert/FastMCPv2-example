@@ -2,14 +2,17 @@ import os
 from fastmcp import FastMCP
 import logging
 from starlette.responses import JSONResponse
-from fastmcp.utilities.logging import configure_logging
-from fastmcp.server.auth.providers import jwt
 from auth_provider import AuthProvider, AuthProviderFactory
 import github_api
+from dotenv import load_dotenv
 
-configure_logging(level="DEBUG", logger=jwt.logger)
-logging.basicConfig(level=logging.DEBUG)
-                        
+# Load environment variables from .env file
+load_dotenv()
+
+# Assert required environment variables
+GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+assert GITHUB_ACCESS_TOKEN, "GITHUB_ACCESS_TOKEN environment variable is required"
+
 # Auth provider selection from environment variable
 AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "auth0").lower()
 
@@ -50,7 +53,7 @@ async def list_repositories() -> str:
 @mcp.tool()
 async def get_repository_info(owner: str, repo: str) -> str:
     """Get detailed information about a specific repository.
-    
+
     Args:
         owner: Repository owner (username or organization)
         repo: Repository name
@@ -62,9 +65,11 @@ async def get_user_info() -> str:
     """Get information about the authenticated user."""
     return await github_api.get_user_info()
 
-# Create ASGI application
+# Create ASGI application (used by run_asgi.sh)
 app = mcp.http_app(transport='streamable-http')
 
+
 if __name__ == "__main__":
+    # Run the MCP via stdio (used by test_mcp_using_claude.sh)
     mcp.run(transport='stdio')
 
