@@ -10,4 +10,5 @@ scripts/
 # local secrets
 .env
 .fastmcp
-tls_data/
+tls_data/server.crt
+tls_data/server.key
