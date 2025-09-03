@@ -10,7 +10,7 @@ import urllib.parse
 
 from oauth import (
     app, clients, authorization_codes, access_tokens, refresh_tokens,
-    generate_client_credentials, generate_authorization_code, 
+    generate_client_credentials, generate_authorization_code,
     generate_access_token, generate_refresh_token,
     verify_code_challenge,
     ISSUER, private_key_pem, key_id
@@ -47,7 +47,7 @@ class TestOAuthServer:
         authorization_codes.clear()
         access_tokens.clear()
         refresh_tokens.clear()
-        
+
         client_id, client_secret = generate_client_credentials()
         client_data = {
             "client_id": client_id,
@@ -72,11 +72,11 @@ class TestUtilityFunctions(TestOAuthServer):
     def test_generate_client_credentials(self):
         """Test client credentials generation."""
         client_id, client_secret = generate_client_credentials()
-        
+
         assert client_id.startswith("mcp_client_")
         assert len(client_id) > len("mcp_client_")
         assert len(client_secret) > 0
-        
+
         # Test uniqueness
         client_id2, client_secret2 = generate_client_credentials()
         assert client_id != client_id2
@@ -87,7 +87,7 @@ class TestUtilityFunctions(TestOAuthServer):
         code = generate_authorization_code()
         assert isinstance(code, str)
         assert len(code) > 0
-        
+
         # Test uniqueness
         code2 = generate_authorization_code()
         assert code != code2
@@ -97,20 +97,20 @@ class TestUtilityFunctions(TestOAuthServer):
         client_id = "test_client"
         scope = "read write"
         resource = "http://localhost:8080"
-        
+
         token = generate_access_token(client_id, scope, resource)
-        
+
         # Verify it's a JWT token
         parts = token.split(".")
         assert len(parts) == 3
-        
+
         # Decode and verify header
         header_decoded = base64.urlsafe_b64decode(parts[0] + "=" * (4 - len(parts[0]) % 4))
         header = json.loads(header_decoded)
         assert header["alg"] == "RS256"
         assert header["typ"] == "JWT"
         assert header["kid"] == key_id
-        
+
         # Decode and verify payload
         payload_decoded = base64.urlsafe_b64decode(parts[1] + "=" * (4 - len(parts[1]) % 4))
         payload = json.loads(payload_decoded)
@@ -126,9 +126,9 @@ class TestUtilityFunctions(TestOAuthServer):
         """Test JWT access token generation with default audience."""
         client_id = "test_client"
         scope = "read write"
-        
+
         token = generate_access_token(client_id, scope)
-        
+
         parts = token.split(".")
         payload_decoded = base64.urlsafe_b64decode(parts[1] + "=" * (4 - len(parts[1]) % 4))
         payload = json.loads(payload_decoded)
@@ -139,7 +139,7 @@ class TestUtilityFunctions(TestOAuthServer):
         token = generate_refresh_token()
         assert isinstance(token, str)
         assert len(token) > 0
-        
+
         # Test uniqueness
         token2 = generate_refresh_token()
         assert token != token2
@@ -147,10 +147,10 @@ class TestUtilityFunctions(TestOAuthServer):
     def test_verify_code_challenge(self):
         """Test PKCE code challenge verification."""
         verifier, challenge = create_code_challenge_verifier()
-        
+
         # Valid verification
         assert verify_code_challenge(verifier, challenge) is True
-        
+
         # Invalid verification
         assert verify_code_challenge("wrong_verifier", challenge) is False
         assert verify_code_challenge(verifier, "wrong_challenge") is False
@@ -166,10 +166,10 @@ class TestAuthorizationServerMetadata(TestOAuthServer):
         authorization_codes.clear()
         access_tokens.clear()
         refresh_tokens.clear()
-        
+
         response = client.get("/.well-known/oauth-authorization-server")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["issuer"] == ISSUER
         assert "authorization_endpoint" in data
@@ -192,15 +192,15 @@ class TestDynamicClientRegistration(TestOAuthServer):
         authorization_codes.clear()
         access_tokens.clear()
         refresh_tokens.clear()
-        
+
         registration_data = {
             "client_name": "test_client",
             "redirect_uris": ["http://localhost:8082/callback"]
         }
-        
+
         response = client.post("/oauth/register", json=registration_data)
         assert response.status_code == 200
-        
+
         data = response.json()
         assert "client_id" in data
         assert "client_secret" in data
@@ -209,7 +209,7 @@ class TestDynamicClientRegistration(TestOAuthServer):
         assert data["grant_types"] == ["authorization_code"]
         assert data["response_types"] == ["code"]
         assert data["token_endpoint_auth_method"] == "client_secret_basic"
-        
+
         # Verify client is stored
         assert data["client_id"] in clients
 
@@ -220,7 +220,7 @@ class TestDynamicClientRegistration(TestOAuthServer):
         authorization_codes.clear()
         access_tokens.clear()
         refresh_tokens.clear()
-        
+
         registration_data = {
             "client_name": "advanced_client",
             "redirect_uris": ["http://localhost:8082/callback", "http://localhost:8083/callback"],
@@ -229,10 +229,10 @@ class TestDynamicClientRegistration(TestOAuthServer):
             "scope": "read write admin",
             "token_endpoint_auth_method": "client_secret_post"
         }
-        
+
         response = client.post("/oauth/register", json=registration_data)
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["grant_types"] == ["authorization_code", "refresh_token"]
         assert data["scope"] == "read write admin"
@@ -251,17 +251,17 @@ class TestAuthorizationEndpoint(TestOAuthServer):
             "scope": "read write",
             "state": "test_state"
         }
-        
+
         response = client.get("/oauth/authorize", params=params, follow_redirects=False)
         assert response.status_code == 307  # Redirect
-        
+
         location = response.headers["location"]
         parsed_url = urllib.parse.urlparse(location)
         query_params = urllib.parse.parse_qs(parsed_url.query)
-        
+
         assert "code" in query_params
         assert query_params["state"][0] == "test_state"
-        
+
         # Verify authorization code is stored
         code = query_params["code"][0]
         assert code in authorization_codes
@@ -269,7 +269,7 @@ class TestAuthorizationEndpoint(TestOAuthServer):
     def test_authorization_with_pkce(self, client, sample_client):
         """Test authorization request with PKCE."""
         verifier, challenge = create_code_challenge_verifier()
-        
+
         params = {
             "response_type": "code",
             "client_id": sample_client["client_id"],
@@ -278,14 +278,14 @@ class TestAuthorizationEndpoint(TestOAuthServer):
             "code_challenge": challenge,
             "code_challenge_method": "S256"
         }
-        
+
         response = client.get("/oauth/authorize", params=params, follow_redirects=False)
         assert response.status_code == 307
-        
+
         location = response.headers["location"]
         parsed_url = urllib.parse.urlparse(location)
         query_params = urllib.parse.parse_qs(parsed_url.query)
-        
+
         code = query_params["code"][0]
         auth_data = authorization_codes[code]
         assert auth_data["code_challenge"] == challenge
@@ -299,7 +299,7 @@ class TestAuthorizationEndpoint(TestOAuthServer):
             "redirect_uri": "http://localhost:8082/callback",
             "scope": "read write"
         }
-        
+
         response = client.get("/oauth/authorize", params=params, follow_redirects=False)
         assert response.status_code == 400
 
@@ -311,7 +311,7 @@ class TestAuthorizationEndpoint(TestOAuthServer):
             "redirect_uri": "http://malicious.com/callback",
             "scope": "read write"
         }
-        
+
         response = client.get("/oauth/authorize", params=params, follow_redirects=False)
         assert response.status_code == 400
 
@@ -324,14 +324,14 @@ class TestAuthorizationEndpoint(TestOAuthServer):
             "scope": "read write",
             "state": "test_state"
         }
-        
+
         response = client.get("/oauth/authorize", params=params, follow_redirects=False)
         assert response.status_code == 307
-        
+
         location = response.headers["location"]
         parsed_url = urllib.parse.urlparse(location)
         query_params = urllib.parse.parse_qs(parsed_url.query)
-        
+
         assert query_params["error"][0] == "unsupported_response_type"
         assert query_params["state"][0] == "test_state"
 
@@ -359,7 +359,7 @@ class TestTokenEndpoint(TestOAuthServer):
     def test_authorization_code_grant_success(self, client, sample_client, auth_code_data):
         """Test successful authorization code grant."""
         code, auth_data = auth_code_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -367,22 +367,22 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 200
-        
+
         data = response.json()
         assert "access_token" in data
         assert "refresh_token" in data
         assert data["token_type"] == "Bearer"
         assert data["expires_in"] == 3600
         assert data["scope"] == "read write"
-        
+
         # Verify JWT token
         access_token = data["access_token"]
         parts = access_token.split(".")
         assert len(parts) == 3
-        
+
         # Verify code is marked as used
         assert authorization_codes[code]["used"] is True
 
@@ -390,7 +390,7 @@ class TestTokenEndpoint(TestOAuthServer):
         """Test authorization code grant with PKCE."""
         verifier, challenge = create_code_challenge_verifier()
         code = generate_authorization_code()
-        
+
         auth_data = {
             "client_id": sample_client["client_id"],
             "redirect_uri": sample_client["redirect_uris"][0],
@@ -402,7 +402,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "used": False,
         }
         authorization_codes[code] = auth_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -411,7 +411,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_secret": sample_client["client_secret"],
             "code_verifier": verifier
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 200
 
@@ -424,7 +424,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -442,7 +442,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "used": False,
         }
         authorization_codes[code] = auth_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -450,7 +450,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -458,7 +458,7 @@ class TestTokenEndpoint(TestOAuthServer):
         """Test authorization code grant with already used code."""
         code, auth_data = auth_code_data
         auth_data["used"] = True
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -466,14 +466,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
     def test_authorization_code_grant_client_mismatch(self, client, sample_client, auth_code_data):
         """Test authorization code grant with client mismatch."""
         code, auth_data = auth_code_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -481,14 +481,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": "wrong_client_id",
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
     def test_authorization_code_grant_invalid_client_secret(self, client, sample_client, auth_code_data):
         """Test authorization code grant with invalid client secret."""
         code, auth_data = auth_code_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -496,14 +496,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": "wrong_secret"
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 401
 
     def test_authorization_code_grant_redirect_uri_mismatch(self, client, sample_client, auth_code_data):
         """Test authorization code grant with redirect URI mismatch."""
         code, auth_data = auth_code_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -511,7 +511,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -519,7 +519,7 @@ class TestTokenEndpoint(TestOAuthServer):
         """Test authorization code grant missing PKCE code verifier."""
         verifier, challenge = create_code_challenge_verifier()
         code = generate_authorization_code()
-        
+
         auth_data = {
             "client_id": sample_client["client_id"],
             "redirect_uri": sample_client["redirect_uris"][0],
@@ -531,7 +531,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "used": False,
         }
         authorization_codes[code] = auth_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -540,7 +540,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_secret": sample_client["client_secret"]
             # Missing code_verifier
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -548,7 +548,7 @@ class TestTokenEndpoint(TestOAuthServer):
         """Test authorization code grant with invalid PKCE code verifier."""
         verifier, challenge = create_code_challenge_verifier()
         code = generate_authorization_code()
-        
+
         auth_data = {
             "client_id": sample_client["client_id"],
             "redirect_uri": sample_client["redirect_uris"][0],
@@ -560,7 +560,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "used": False,
         }
         authorization_codes[code] = auth_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -569,7 +569,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_secret": sample_client["client_secret"],
             "code_verifier": "wrong_verifier"
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -587,7 +587,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "used": False,
         }
         authorization_codes[code] = auth_data
-        
+
         form_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -595,7 +595,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": "client_not_in_dict",
             "client_secret": "some_secret"
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -610,17 +610,17 @@ class TestTokenEndpoint(TestOAuthServer):
             "expires_at": time.time() + 86400,
         }
         refresh_tokens[refresh_token_val] = refresh_data
-        
+
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_val,
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 200
-        
+
         data = response.json()
         assert "access_token" in data
         assert data["token_type"] == "Bearer"
@@ -635,7 +635,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -649,14 +649,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "expires_at": time.time() - 100,  # Expired
         }
         refresh_tokens[refresh_token_val] = refresh_data
-        
+
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_val,
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -670,14 +670,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "expires_at": time.time() + 86400,
         }
         refresh_tokens[refresh_token_val] = refresh_data
-        
+
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_val,
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -691,14 +691,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "expires_at": time.time() + 86400,
         }
         refresh_tokens[refresh_token_val] = refresh_data
-        
+
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_val,
             "client_id": "nonexistent_client",
             "client_secret": "some_secret"
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -712,14 +712,14 @@ class TestTokenEndpoint(TestOAuthServer):
             "expires_at": time.time() + 86400,
         }
         refresh_tokens[refresh_token_val] = refresh_data
-        
+
         form_data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_val,
             "client_id": sample_client["client_id"],
             "client_secret": "wrong_secret"
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 401
 
@@ -730,7 +730,7 @@ class TestTokenEndpoint(TestOAuthServer):
             "client_id": sample_client["client_id"],
             "client_secret": sample_client["client_secret"]
         }
-        
+
         response = client.post("/oauth/token", data=form_data)
         assert response.status_code == 400
 
@@ -755,10 +755,10 @@ class TestTokenValidation(TestOAuthServer):
     def test_validate_token_success(self, client, valid_access_token):
         """Test successful token validation."""
         token, token_data = valid_access_token
-        
+
         response = client.get("/oauth/validate", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["active"] is True
         assert data["client_id"] == token_data["client_id"]
@@ -780,7 +780,7 @@ class TestTokenValidation(TestOAuthServer):
             "token_type": "Bearer",
         }
         access_tokens[token] = token_data
-        
+
         response = client.get("/oauth/validate", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 
@@ -797,11 +797,11 @@ class TestJWKSEndpoint(TestOAuthServer):
         """Test JWKS endpoint returns proper key information."""
         response = client.get("/.well-known/jwks.json")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert "keys" in data
         assert len(data["keys"]) == 1
-        
+
         key = data["keys"][0]
         assert key["kty"] == "RSA"
         assert key["kid"] == key_id
@@ -809,6 +809,34 @@ class TestJWKSEndpoint(TestOAuthServer):
         assert key["alg"] == "RS256"
         assert "n" in key  # RSA modulus
         assert "e" in key  # RSA exponent
+
+    def test_public_key_endpoint(self, client):
+        """Test public key endpoint returns PEM format."""
+        response = client.get("/publickey")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "text/plain; charset=utf-8"
+
+        pem_content = response.text
+        assert pem_content.startswith("-----BEGIN PUBLIC KEY-----")
+        assert pem_content.endswith("-----END PUBLIC KEY-----\n")
+        assert "MII" in pem_content  # Base64 content indicator
+
+    def test_single_jwk_endpoint(self, client):
+        """Test single JWK endpoint for jwt.io compatibility."""
+        response = client.get("/jwk")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+
+        jwk = response.json()
+        assert jwk["kty"] == "RSA"
+        assert jwk["kid"] == key_id
+        assert jwk["use"] == "sig"
+        assert jwk["alg"] == "RS256"
+        assert "n" in jwk  # RSA modulus
+        assert "e" in jwk  # RSA exponent
+
+        # Verify it's a single JWK object, not wrapped in "keys" array
+        assert "keys" not in jwk
 
 
 class TestRootEndpoint(TestOAuthServer):
@@ -830,10 +858,10 @@ class TestJWTTokenValidation:
         client_id = "test_client"
         scope = "read write"
         token = generate_access_token(client_id, scope)
-        
+
         # Verify token signature using the same JWT library
         jwt_verifier = JsonWebToken(["RS256"])
-        
+
         try:
             claims = jwt_verifier.decode(token, private_key_pem)
             assert claims["sub"] == client_id
@@ -846,14 +874,14 @@ class TestJWTTokenValidation:
         """Test JWT token expiration claim."""
         client_id = "test_client"
         scope = "read write"
-        
+
         # Mock time to control token generation
         with patch('oauth.time.time', return_value=1000000):
             token = generate_access_token(client_id, scope)
-        
+
         jwt_verifier = JsonWebToken(["RS256"])
         claims = jwt_verifier.decode(token, private_key_pem)
-        
+
         assert claims["iat"] == 1000000
         assert claims["exp"] == 1000000 + 3600  # 1 hour later
 

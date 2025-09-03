@@ -432,6 +432,26 @@ async def jwks():
     return JSONResponse({"keys": [jwk_dict]})
 
 
+@app.get("/publickey")
+async def public_key():
+    """Public key endpoint in PEM format"""
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(public_key_pem.decode('utf-8'), media_type="text/plain")
+
+
+@app.get("/jwk")
+async def single_jwk():
+    """Single JWK endpoint for jwt.io compatibility"""
+    # Create JWK from public key
+    jwk = JsonWebKey.import_key(public_key_pem)
+    jwk_dict = jwk.as_dict()
+    jwk_dict["kid"] = key_id
+    jwk_dict["use"] = "sig"
+    jwk_dict["alg"] = "RS256"
+
+    return JSONResponse(jwk_dict)
+
+
 @app.get("/")
 async def root():
     """Root endpoint with server information"""
@@ -441,13 +461,19 @@ async def root():
         <body>
             <h1>MCP OAuth 2.1 Authorization Server</h1>
             <p>Issuer: {ISSUER}</p>
-            <h2>Endpoints:</h2>
+            <h2>Main endpoints:</h2>
             <ul>
                 <li><a href="/.well-known/oauth-authorization-server">Authorization Server Metadata</a></li>
                 <li>Authorization: {AUTHORIZATION_ENDPOINT}</li>
                 <li>Token: {TOKEN_ENDPOINT}</li>
                 <li>Registration: {REGISTRATION_ENDPOINT}</li>
                 <li><a href="/.well-known/jwks.json">JWKS</a></li>
+            </ul>
+            <h2>Debug endpoints:</h2>
+            <h3>Created to make it easy to test with tools like <a href="https://www.jwt.io/">https://www.jwt.io/</a>
+            <ul>
+                <li><a href="/jwk">JWK (Single Key)</a></li>
+                <li><a href="/publickey">Public Key (PEM)</a></li>
             </ul>
             <h2>Features:</h2>
             <ul>
@@ -456,6 +482,8 @@ async def root():
                 <li>PKCE support (RFC 7636)</li>
                 <li>Resource Indicators support</li>
                 <li>Authorization Server Metadata (RFC 8414)</li>
+                <li>JWT Access Tokens (RS256 signed)</li>
+                <li>JWKS endpoint for public key distribution</li>
             </ul>
         </body>
     </html>
