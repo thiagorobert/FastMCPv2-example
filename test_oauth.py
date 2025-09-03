@@ -812,7 +812,7 @@ class TestJWKSEndpoint(TestOAuthServer):
 
     def test_public_key_endpoint(self, client):
         """Test public key endpoint returns PEM format."""
-        response = client.get("/publickey")
+        response = client.get("/debug/publickey")
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/plain; charset=utf-8"
 
@@ -823,7 +823,7 @@ class TestJWKSEndpoint(TestOAuthServer):
 
     def test_single_jwk_endpoint(self, client):
         """Test single JWK endpoint for jwt.io compatibility."""
-        response = client.get("/jwk")
+        response = client.get("/debug/jwk")
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/json"
 
@@ -837,6 +837,48 @@ class TestJWKSEndpoint(TestOAuthServer):
 
         # Verify it's a single JWK object, not wrapped in "keys" array
         assert "keys" not in jwk
+
+    def test_debug_clients_endpoint_empty(self, client):
+        """Test debug clients endpoint when no clients are registered."""
+        clients.clear()
+        response = client.get("/debug/clients")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+
+        data = response.json()
+        assert data["total_clients"] == 0
+        assert data["clients"] == []
+
+    def test_debug_clients_endpoint_with_clients(self, client):
+        """Test debug clients endpoint with registered clients."""
+        clients.clear()
+        # Register a client first
+        client_data = {
+            "client_name": "Test Client",
+            "redirect_uris": ["http://localhost:8082/callback"],
+            "grant_types": ["authorization_code"],
+            "scope": "read write"
+        }
+
+        reg_response = client.post("/oauth/register", json=client_data)
+        assert reg_response.status_code == 200
+        registered_client = reg_response.json()
+
+        # Now test the debug endpoint
+        response = client.get("/debug/clients")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["total_clients"] == 1
+        assert len(data["clients"]) == 1
+
+        client_info = data["clients"][0]
+        assert client_info["client_id"] == registered_client["client_id"]
+        assert client_info["client_name"] == "Test Client"
+        assert client_info["redirect_uris"] == ["http://localhost:8082/callback"]
+        assert client_info["grant_types"] == ["authorization_code"]
+        assert client_info["scope"] == "read write"
+        assert "client_id_issued_at" in client_info
 
 
 class TestRootEndpoint(TestOAuthServer):

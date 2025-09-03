@@ -432,14 +432,14 @@ async def jwks():
     return JSONResponse({"keys": [jwk_dict]})
 
 
-@app.get("/publickey")
+@app.get("/debug/publickey")
 async def public_key():
     """Public key endpoint in PEM format"""
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(public_key_pem.decode('utf-8'), media_type="text/plain")
 
 
-@app.get("/jwk")
+@app.get("/debug/jwk")
 async def single_jwk():
     """Single JWK endpoint for jwt.io compatibility"""
     # Create JWK from public key
@@ -450,6 +450,27 @@ async def single_jwk():
     jwk_dict["alg"] = "RS256"
 
     return JSONResponse(jwk_dict)
+
+
+@app.get("/debug/clients")
+async def debug_clients():
+    """Debug endpoint to list all registered clients"""
+    client_list = []
+    for client_id, client_data in clients.items():
+        client_info = {
+            "client_id": client_id,
+            "client_name": client_data.get("client_name", "Unknown"),
+            "redirect_uris": client_data.get("redirect_uris", []),
+            "grant_types": client_data.get("grant_types", []),
+            "scope": client_data.get("scope", ""),
+            "client_id_issued_at": client_data.get("client_id_issued_at", 0),
+        }
+        client_list.append(client_info)
+
+    return JSONResponse({
+        "total_clients": len(client_list),
+        "clients": client_list
+    })
 
 
 @app.get("/")
@@ -472,8 +493,9 @@ async def root():
             <h2>Debug endpoints:</h2>
             <h3>Created to make it easy to test with tools like <a href="https://www.jwt.io/">https://www.jwt.io/</a>
             <ul>
-                <li><a href="/jwk">JWK (Single Key)</a></li>
-                <li><a href="/publickey">Public Key (PEM)</a></li>
+                <li><a href="/debug/jwk">JWK (Single Key)</a></li>
+                <li><a href="/debug/publickey">Public Key (PEM)</a></li>
+                <li><a href="/debug/clients">Registered Clients (JSON)</a></li>
             </ul>
             <h2>Features:</h2>
             <ul>
