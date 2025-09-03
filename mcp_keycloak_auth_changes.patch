@@ -62,7 +62,7 @@
 -    # this implementation only supports code; ie: it does not support implicit grants
 -    response_types: list[Literal["code"]] = ["code"]
 +    # this implementation only supports code; ie: it does not support implicit grants (changed it for keycloak)
-+    response_types: list[Literal["none", "code"]] = ["code"]
++    response_types: list[str] = ["code"]
      scope: str | None = None
  
      # these fields are currently unused, but we support & store them for potential
@@ -93,16 +93,4 @@
  
  class OAuthClientInformationFull(OAuthClientMetadata):
      """
---- .venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py.orig	2025-08-30 10:03:01.973522671 -0700
-+++ .venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py	2025-08-31 19:19:50.355253023 -0700
-@@ -321,8 +321,8 @@
-                 return self._jwks_cache[kid]
-             else:
-                 # No kid in token - only allow if there's exactly one key
--                if len(self._jwks_cache) == 1:
--                    return next(iter(self._jwks_cache.values()))
-+                if len(self._jwks_cache) == 2:
-+                    return list(self._jwks_cache.values())[1]
-                 elif len(self._jwks_cache) > 1:
-                     raise ValueError(
-                         "Multiple keys in JWKS but no key ID (kid) in token"
+
