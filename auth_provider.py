@@ -8,6 +8,7 @@ from pydantic import AnyHttpUrl
 class AuthProvider(Enum):
     AUTH0 = "auth0"
     KEYCLOAK = "keycloak"
+    LOCAL = "local"
 
 
 class AuthProviderFactory:
@@ -16,6 +17,7 @@ class AuthProviderFactory:
     AUTH0_DOMAIN = "https://rfc7591-test.us.auth0.com"
     KEYCLOAK_DOMAIN = "http://localhost:8081"
     KEYCLOAK_REALM = "rfc7591-realm"
+    LOCAL_DOMAIN = "http://localhost:8001"
 
     @classmethod
     def create_auth0_provider(cls) -> RemoteAuthProvider:
@@ -46,12 +48,27 @@ class AuthProviderFactory:
         )
 
     @classmethod
+    def create_local_provider(cls) -> RemoteAuthProvider:
+        """Create Local authentication provider."""
+        token_verifier = JWTVerifier(
+            jwks_uri=f"{cls.LOCAL_DOMAIN}/.well-known/jwks.json",
+            issuer=f"{cls.LOCAL_DOMAIN}/",
+        )
+
+        return RemoteAuthProvider(
+            token_verifier=token_verifier,
+            authorization_servers=[AnyHttpUrl(cls.LOCAL_DOMAIN)],
+            resource_server_url="https://github.com"
+        )
+    @classmethod
     def create_provider(cls, provider_type: AuthProvider) -> RemoteAuthProvider:
         """Create authentication provider based on type."""
         if provider_type == AuthProvider.AUTH0:
             return cls.create_auth0_provider()
         elif provider_type == AuthProvider.KEYCLOAK:
             return cls.create_keycloak_provider()
+        elif provider_type == AuthProvider.LOCAL:
+            return cls.create_local_provider()
         else:
             raise ValueError(f"Unsupported auth provider: {provider_type}")
 
@@ -62,5 +79,7 @@ class AuthProviderFactory:
             return f"{cls.AUTH0_DOMAIN}/.well-known/openid-configuration"
         elif provider_type == AuthProvider.KEYCLOAK:
             return f"{cls.KEYCLOAK_DOMAIN}/realms/{cls.KEYCLOAK_REALM}/.well-known/openid-configuration"
+        elif provider_type == AuthProvider.LOCAL:
+            return f"{cls.LOCAL_DOMAIN}/.well-known/oauth-authorization-server"
         else:
             raise ValueError(f"Unsupported auth provider: {provider_type}")

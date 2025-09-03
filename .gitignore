@@ -6,6 +6,7 @@ uv.lock
 tf/
 scripts/
 .venv
+htmlcov
 
 # local secrets
 .env
