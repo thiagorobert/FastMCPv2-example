@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from authlib.jose import JsonWebToken
 import urllib.parse
 
-from oauth import (
+from local_auth_server import (
     app, clients, authorization_codes, access_tokens, refresh_tokens,
     generate_client_credentials, generate_authorization_code,
     generate_access_token, generate_refresh_token,
@@ -918,7 +918,7 @@ class TestJWTTokenValidation:
         scope = "read write"
 
         # Mock time to control token generation
-        with patch('oauth.time.time', return_value=1000000):
+        with patch('local_auth_server.time.time', return_value=1000000):
             token = generate_access_token(client_id, scope)
 
         jwt_verifier = JsonWebToken(["RS256"])

@@ -4,7 +4,6 @@ uv.lock
 .python-version
 .coverage
 tf/
-scripts/
 .venv
 htmlcov
 

@@ -4,7 +4,7 @@ import tempfile
 import os
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastmcp import Client
-from fastmcpv2_example import mcp
+from mcp_server import mcp
 from github_api import make_github_request, load_token
 
 

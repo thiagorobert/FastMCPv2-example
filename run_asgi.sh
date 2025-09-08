@@ -58,14 +58,14 @@ fi
 
 if [ "$PROTOCOL" = "https" ]; then
     echo "Starting HTTPS server on port 8080..."
-    uvicorn fastmcpv2_example:app \
+    uvicorn mcp_server:app \
         --host 127.0.0.1 \
         --port 8080 \
         --ssl-keyfile tls_data/server.key \
         --ssl-certfile tls_data/server.crt
 else
     echo "Starting HTTP server on port 8080..."
-    uvicorn fastmcpv2_example:app \
+    uvicorn mcp_server:app \
         --host 127.0.0.1 \
         --port 8080
 fi

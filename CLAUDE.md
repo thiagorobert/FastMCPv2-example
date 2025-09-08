@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Components
 
-**FastMCP Server (`fastmcpv2_example.py`)**
+**FastMCP Server (`mcp_server.py`)**
 - Built on FastMCP v2 framework for creating MCP (Model Context Protocol) servers
 - Provides GitHub API integration via OAuth token authentication
 - Exposes 3 main MCP tools: `list_repositories`, `get_repository_info`, `get_user_info`
@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Factory pattern for creating appropriate auth providers based on configuration
 - Centralized OAuth metadata URL generation
 
-**Local OAuth Server (`oauth.py`)**
+**Local OAuth Server (`local_auth_server.py`)**
 - Full OAuth 2.1 compliant authorization server for local development and testing
 - JWT access token generation with RS256 signing
 - Dynamic Client Registration (RFC 7591) support
@@ -46,13 +46,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Key Files
 
-- `fastmcpv2_example.py`: Main MCP server implementation
+- `mcp_server.py`: Main MCP server implementation
 - `auth_provider.py`: Abstracted OAuth authentication logic for Auth0, Keycloak, and Local providers
-- `oauth.py`: Local OAuth 2.1 compliant authorization server for development and testing
+- `local_auth_server.py`: Local OAuth 2.1 compliant authorization server for development and testing
 - `github_api.py`: GitHub API integration with token handling and HTTP client management
-- `test_fastmcpv2_example.py`: Comprehensive unit tests using FastMCP's in-memory testing
-- `test_oauth.py`: Comprehensive unit tests for the local OAuth server (99% coverage)
-- `simple_client.py`: RFC 7591-compliant OAuth client for testing dynamic client registration
+- `test_mcp_server.py`: Comprehensive unit tests using FastMCP's in-memory testing
+- `test_local_auth_server.py`: Comprehensive unit tests for the local OAuth server (99% coverage)
+- `client.py`: RFC 7591-compliant OAuth client for testing dynamic client registration
 - `mcp_config.json`: MCP client configuration for testing with Claude CLI
 - `.env`: Environment variables file (contains sensitive tokens)
 - `run_asgi.sh`: HTTPS/HTTP server startup script with auth provider selection
@@ -95,11 +95,11 @@ Key dependencies from `pyproject.toml`:
 
 ### Unit testing
 - Run all tests: `uv run pytest`
-- Run MCP server tests: `uv run pytest test_fastmcpv2_example.py`
-- Run OAuth server tests: `uv run pytest test_oauth.py`
-- Run specific test: `uv run pytest test_fastmcpv2_example.py::TestFastMCPv2Example::test_load_token_success`
-- Run with coverage: `uv run pytest test_fastmcpv2_example.py --cov=fastmcpv2_example --cov-report=term-missing`
-- Run OAuth tests with coverage: `uv run pytest test_oauth.py --cov=oauth --cov-report=term-missing`
+- Run MCP server tests: `uv run pytest test_mcp_server.py`
+- Run OAuth server tests: `uv run pytest test_local_auth_server.py`
+- Run specific test: `uv run pytest test_mcp_server.py::TestFastMCPv2Example::test_load_token_success`
+- Run with coverage: `uv run pytest test_mcp_server.py --cov=mcp_server --cov-report=term-missing`
+- Run OAuth tests with coverage: `uv run pytest test_local_auth_server.py --cov=local_auth_server --cov-report=term-missing`
 
 ### Code Quality
 - Lint code: `uv run ruff check .`
@@ -107,7 +107,7 @@ Key dependencies from `pyproject.toml`:
 - Check for dead code: `uv run vulture .`
 
 ### Running the MCP server
-- MCP server (stdio): `uv run fastmcpv2_example.py`
+- MCP server (stdio): `uv run mcp_server.py`
 - HTTP server: `./run_asgi.sh --http` 
 - HTTPS server: `./run_asgi.sh --https` (default)
 - With Keycloak auth: `./run_asgi.sh --auth-provider keycloak`
@@ -117,14 +117,14 @@ Key dependencies from `pyproject.toml`:
 
 ### Running the Local OAuth Server
 
-- Local OAuth server: `uv run python oauth.py`
+- Local OAuth server: `uv run python local_auth_server.py`
 - Runs on port 8001 by default
 - Provides OAuth 2.1 endpoints including JWT token generation
 - Includes debug endpoints for testing: `/publickey` (PEM), `/jwk` (single JWK), `/.well-known/jwks.json`
 
 ### Running the client
 
-- `uv run simple_client.py`
+- `uv run client.py`
 - Creates a dynamic client, performs OAuth, and calls the MCP server
 - Works with any configured auth provider (Auth0, Keycloak, or Local)
 
@@ -132,9 +132,9 @@ Key dependencies from `pyproject.toml`:
 
 For local development and testing:
 
-1. **Start Local OAuth Server**: `uv run python oauth.py` (runs on port 8001)
+1. **Start Local OAuth Server**: `uv run python local_auth_server.py` (runs on port 8001)
 2. **Start MCP Server with Local Auth**: `./run_asgi.sh --http --auth-provider local` (runs on port 8080)
-3. **Run Client**: `uv run simple_client.py` (connects to both servers)
+3. **Run Client**: `uv run client.py` (connects to both servers)
 
 The local OAuth server provides JWT tokens that the MCP server validates using the JWKS endpoint at `http://localhost:8001/.well-known/jwks.json`.
 
