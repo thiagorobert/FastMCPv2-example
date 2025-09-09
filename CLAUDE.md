@@ -156,4 +156,9 @@ The local OAuth server provides JWT tokens that the MCP server validates using t
 
 6. **Newline Check**: Ensure all files end with a newline character
 
+7. **Secret Files Protection**: If any files or directories are generated that contain secrets, tokens, or sensitive information, ensure they are added to `.gitignore` immediately
+   * Examples: `.user_tokens/`, `.env.local`, `*.key`, `*_token.json`, etc.
+   * Check with: `find . -name "*.json" -path "*token*" -o -name "*.key" -o -name ".env.*"`
+   * Add to `.gitignore` and remove from git tracking if already committed
+
 **Execute these checks in the exact order listed above before considering any code task complete.**

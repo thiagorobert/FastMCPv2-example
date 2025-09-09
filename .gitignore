@@ -9,6 +9,13 @@ htmlcov
 
 # local secrets
 .env
+.env.*
 .fastmcp
 tls_data/server.crt
 tls_data/server.key
+
+# OAuth Proxy Pattern - user token storage (contains sensitive tokens)
+.user_tokens/
+*_tokens/
+*_token.json
+*.key
