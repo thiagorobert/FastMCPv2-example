@@ -10,5 +10,6 @@ htmlcov
 # local secrets
 .env
 .fastmcp
+.user_tokens
 tls_data/server.crt
 tls_data/server.key
