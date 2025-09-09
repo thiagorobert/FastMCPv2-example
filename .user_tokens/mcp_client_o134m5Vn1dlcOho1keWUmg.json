@@ -1,0 +1,11 @@
+{
+  "user_id": "mcp_client_o134m5Vn1dlcOho1keWUmg",
+  "github_access_token": "github_token_123",
+  "github_refresh_token": "github_refresh_456",
+  "github_expires_at": 1757437389.9799356,
+  "oauth_access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im9hdXRoLWtleS0xIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDEvIiwic3ViIjoibWNwX2NsaWVudF9vMTM0bTVWbjFkbGNPaG8xa2VXVW1nIiwiY2xpZW50X2lkIjoibWNwX2NsaWVudF9vMTM0bTVWbjFkbGNPaG8xa2VXVW1nIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwiaWF0IjoxNzU3NDMzNzg5LCJleHAiOjE3NTc0MzczODksInNjb3BlIjoicmVhZCB3cml0ZSBhZG1pbiJ9.g91iwQBI-y1eIr8vgUWdAgIKWx-NqJLnl3ax438vDxvGBTDaYY3helo06838T7bSBrqEf8Vh1vzxIFPjbZCZyiwVxNTq3t9vAp_6lnIyZgHs-ta-8m7LRXH_wqg0GcC8sSh8tbSIkwe46vChWHDOTuG7xZtsukq-PGsKcG1UjhSoXuVGxintoA8_O-YsbYnMEwq2BcXOMIAwn1vNV7-JuFK9ny5Uew05yOaWi7CUjgL60wAvcGx1Fgf9IA4_AdNDWDjajvHYErkSfYhQldQ7UZUcjCtFX8oyrqxqGYumBzGmN505TgyyPQjNFjj215efrxSe9Bpt1JxovKt9CDx0Eg",
+  "oauth_refresh_token": "Hi7i2Bkm7xItUL0lFX5Z6SvVBzAwE1NJLQXPmDybvstuUQMvMy8QcuZbV6r4VsdnYYd6oQpwBSOOhIxprX9R2g",
+  "oauth_expires_at": 1757437389.9807577,
+  "created_at": 1757433789.9799318,
+  "updated_at": 1757433789.9807963
+}

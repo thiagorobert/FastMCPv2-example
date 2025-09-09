@@ -4,6 +4,7 @@ import urllib.parse
 from typing import Dict, List, Optional
 import base64
 import hashlib
+import logging
 
 from fastapi import FastAPI, HTTPException, Form, Depends
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
@@ -13,6 +14,7 @@ from pydantic import BaseModel
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from authlib.jose import JsonWebToken, JsonWebKey
+from user_token_store import token_store
 
 # OAuth 2.1 Server with Dynamic Client Registration for MCP
 app = FastAPI(title="MCP OAuth 2.1 Authorization Server")
@@ -22,6 +24,28 @@ clients: Dict[str, Dict] = {}
 authorization_codes: Dict[str, Dict] = {}
 access_tokens: Dict[str, Dict] = {}
 refresh_tokens: Dict[str, Dict] = {}
+
+# Simulated GitHub users (in production, this would integrate with actual GitHub OAuth)
+github_users: Dict[str, Dict] = {
+    "testuser": {
+        "username": "testuser",
+        "email": "testuser@example.com", 
+        "name": "Test User",
+        "access_token": "github_token_123",
+        "refresh_token": "github_refresh_456",
+        "expires_in": 3600
+    },
+    "demouser": {
+        "username": "demouser",
+        "email": "demo@example.com",
+        "name": "Demo User", 
+        "access_token": "github_token_789",
+        "refresh_token": "github_refresh_101",
+        "expires_in": 3600
+    }
+}
+
+logger = logging.getLogger(__name__)
 
 # Server configuration
 ISSUER = "http://localhost:8001/"
@@ -176,8 +200,9 @@ async def authorize(
     code_challenge: Optional[str] = None,
     code_challenge_method: Optional[str] = None,
     resource: Optional[str] = None,
+    github_user: Optional[str] = None,
 ):
-    """OAuth 2.1 Authorization Endpoint"""
+    """OAuth 2.1 Authorization Endpoint with GitHub Social Connection Simulation"""
 
     # Validate client
     if client_id not in clients:
@@ -201,8 +226,50 @@ async def authorize(
             f"{redirect_uri}?" + urllib.parse.urlencode(error_params)
         )
 
-    # For demo purposes, auto-approve the authorization
-    # In production, you'd show a consent screen
+    # Check if GitHub scope is requested or auto-add it for demo purposes
+    scopes = scope.split() if scope else []
+    github_requested = "github" in scopes or "github:user" in scopes or True  # Auto-enable for demo
+
+    # If no github_user specified and GitHub is requested, show user selection
+    if github_requested and not github_user:
+        return HTMLResponse(f"""
+        <html>
+            <body>
+                <h2>GitHub Social Login Simulation</h2>
+                <p>This simulates GitHub OAuth. Select a test user:</p>
+                <form method="get" action="/oauth/authorize">
+                    <input type="hidden" name="response_type" value="{response_type}">
+                    <input type="hidden" name="client_id" value="{client_id}">
+                    <input type="hidden" name="redirect_uri" value="{redirect_uri}">
+                    <input type="hidden" name="scope" value="{scope}">
+                    <input type="hidden" name="state" value="{state or ''}">
+                    <input type="hidden" name="code_challenge" value="{code_challenge or ''}">
+                    <input type="hidden" name="code_challenge_method" value="{code_challenge_method or ''}">
+                    <input type="hidden" name="resource" value="{resource or ''}">
+                    
+                    <div style="margin: 10px 0;">
+                        <input type="radio" name="github_user" value="testuser" checked>
+                        <label>testuser (Test User)</label>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <input type="radio" name="github_user" value="demouser">
+                        <label>demouser (Demo User)</label>
+                    </div>
+                    
+                    <button type="submit" style="margin-top: 15px;">Authorize</button>
+                </form>
+                
+                <p><small>In production, this would redirect to GitHub for real authentication.</small></p>
+            </body>
+        </html>
+        """)
+
+    # Validate GitHub user if specified
+    selected_github_user = None
+    if github_requested and github_user:
+        if github_user not in github_users:
+            raise HTTPException(status_code=400, detail="Invalid GitHub user")
+        selected_github_user = github_users[github_user]
 
     code = generate_authorization_code()
 
@@ -213,6 +280,7 @@ async def authorize(
         "code_challenge": code_challenge,
         "code_challenge_method": code_challenge_method,
         "resource": resource,
+        "github_user": selected_github_user,  # Store GitHub user info
         "expires_at": time.time() + 600,  # 10 minutes
         "used": False,
     }
@@ -322,6 +390,26 @@ async def handle_authorization_code_grant(
         "resource": auth_code_data.get("resource", resource),
         "expires_at": time.time() + 86400,  # 24 hours
     }
+
+    # If GitHub user was associated during authorization, store GitHub tokens
+    github_user = auth_code_data.get("github_user")
+    if github_user:
+        try:
+            await token_store.update_github_token(
+                user_id=client_id,  # Use client_id as user_id for simplicity
+                access_token=github_user["access_token"],
+                refresh_token=github_user["refresh_token"],
+                expires_in=github_user["expires_in"]
+            )
+            await token_store.update_oauth_token(
+                user_id=client_id,
+                access_token=access_token,
+                refresh_token=refresh_token_val,
+                expires_in=3600
+            )
+            logger.info(f"Stored GitHub and OAuth tokens for client: {client_id}")
+        except Exception as e:
+            logger.error(f"Failed to store tokens for client {client_id}: {e}")
 
     return JSONResponse(
         {

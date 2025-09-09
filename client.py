@@ -38,6 +38,7 @@ async def main():
             print(f"\nCalling tool: {first_tool.name}")
             result = await client.call_tool(first_tool.name, {})
             print(f"Result: {result.__class__}")
+            print(result)
 
 
 if __name__ == "__main__":

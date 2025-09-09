@@ -9,9 +9,14 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Assert required environment variables
+logger = logging.getLogger(__name__)
+
+# Optional GitHub access token (now used as fallback only)
 GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
-assert GITHUB_ACCESS_TOKEN, "GITHUB_ACCESS_TOKEN environment variable is required"
+if GITHUB_ACCESS_TOKEN:
+    logging.info("GITHUB_ACCESS_TOKEN found - will be used as fallback for unauthenticated requests")
+else:
+    logging.info("GITHUB_ACCESS_TOKEN not set - using dynamic token management only")
 
 # Auth provider selection from environment variable
 AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "auth0").lower()
@@ -48,7 +53,28 @@ async def health_check(_request):
 @mcp.tool()
 async def list_repositories() -> str:
     """List all repositories accessible to the authenticated user."""
-    return await github_api.list_repositories()
+    # Try to get user ID from the current request context
+    user_id = None
+    try:
+        # In FastMCP with JWT auth, the client_id is typically available in the token
+        # For this implementation, we'll use the JWT subject (sub) claim as user_id
+        from fastmcp.server.context import get_request_context
+        context = get_request_context()
+        if hasattr(context, 'user') and context.user:
+            user_id = getattr(context.user, 'sub', None)
+            if not user_id:
+                user_id = getattr(context.user, 'client_id', None)
+            
+            # Debug: Log what we found in the JWT for troubleshooting
+            logger.info(f"JWT context debug - sub: {getattr(context.user, 'sub', None)}, client_id: {getattr(context.user, 'client_id', None)}")
+            if hasattr(context.user, '__dict__'):
+                logger.info(f"Available JWT claims: {list(context.user.__dict__.keys())}")
+    except Exception as e:
+        # If context is not available or user is not authenticated, user_id remains None
+        logger.debug(f"Failed to get user context: {e}")
+        pass
+    
+    return await github_api.list_repositories(user_id)
 
 @mcp.tool()
 async def get_repository_info(owner: str, repo: str) -> str:
@@ -58,12 +84,48 @@ async def get_repository_info(owner: str, repo: str) -> str:
         owner: Repository owner (username or organization)
         repo: Repository name
     """
-    return await github_api.get_repository_info(owner, repo)
+    # Try to get user ID from the current request context
+    user_id = None
+    try:
+        from fastmcp.server.context import get_request_context
+        context = get_request_context()
+        if hasattr(context, 'user') and context.user:
+            user_id = getattr(context.user, 'sub', None)
+            if not user_id:
+                user_id = getattr(context.user, 'client_id', None)
+            
+            # Debug: Log what we found in the JWT for troubleshooting
+            logger.info(f"JWT context debug - sub: {getattr(context.user, 'sub', None)}, client_id: {getattr(context.user, 'client_id', None)}")
+            if hasattr(context.user, '__dict__'):
+                logger.info(f"Available JWT claims: {list(context.user.__dict__.keys())}")
+    except Exception as e:
+        logger.debug(f"Failed to get user context: {e}")
+        pass
+    
+    return await github_api.get_repository_info(owner, repo, user_id)
 
 @mcp.tool()
 async def get_user_info() -> str:
     """Get information about the authenticated user."""
-    return await github_api.get_user_info()
+    # Try to get user ID from the current request context
+    user_id = None
+    try:
+        from fastmcp.server.context import get_request_context
+        context = get_request_context()
+        if hasattr(context, 'user') and context.user:
+            user_id = getattr(context.user, 'sub', None)
+            if not user_id:
+                user_id = getattr(context.user, 'client_id', None)
+            
+            # Debug: Log what we found in the JWT for troubleshooting
+            logger.info(f"JWT context debug - sub: {getattr(context.user, 'sub', None)}, client_id: {getattr(context.user, 'client_id', None)}")
+            if hasattr(context.user, '__dict__'):
+                logger.info(f"Available JWT claims: {list(context.user.__dict__.keys())}")
+    except Exception as e:
+        logger.debug(f"Failed to get user context: {e}")
+        pass
+    
+    return await github_api.get_user_info(user_id)
 
 # Create ASGI application (used by run_asgi.sh)
 app = mcp.http_app(transport='streamable-http')

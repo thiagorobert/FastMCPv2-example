@@ -71,8 +71,8 @@ class TestFastMCPv2Example:
     def test_load_token_missing_access_token(self):
         """Test token loading with missing access_token key."""
         with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(RuntimeError, match="GITHUB_ACCESS_TOKEN environment variable is required"):
-                load_token()
+            result = load_token()
+            assert result is None
 
     @pytest.mark.asyncio
     async def test_make_github_request_success(self):
@@ -135,7 +135,7 @@ class TestFastMCPv2Example:
 
                 async with Client(mcp) as client:
                     result = await client.call_tool("list_repositories", {})
-                    assert result.data == "Unable to fetch repositories."
+                    assert "Unable to fetch repositories" in result.data
 
         # Clean up
         os.unlink(mock_token_file)
@@ -173,7 +173,7 @@ class TestFastMCPv2Example:
                         "owner": "testuser",
                         "repo": "test-repo"
                     })
-                    assert "Unable to fetch information for repository testuser/test-repo." in result.data
+                    assert "Unable to fetch information for repository testuser/test-repo" in result.data
 
         # Clean up
         os.unlink(mock_token_file)
@@ -205,7 +205,7 @@ class TestFastMCPv2Example:
 
                 async with Client(mcp) as client:
                     result = await client.call_tool("get_user_info", {})
-                    assert result.data == "Unable to fetch user information."
+                    assert "Unable to fetch user information" in result.data
 
         # Clean up
         os.unlink(mock_token_file)
@@ -217,29 +217,20 @@ class TestFastMCPv2Example:
             # This will cause load_token() to fail since GITHUB_ACCESS_TOKEN is not set
 
             async with Client(mcp) as client:
-                # Test list_repositories - should raise RuntimeError due to token failure
-                try:
-                    await client.call_tool("list_repositories", {})
-                    assert False, "Expected RuntimeError to be raised"
-                except Exception as e:
-                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
+                # Test list_repositories - should return authentication error message
+                result = await client.call_tool("list_repositories", {})
+                assert "Please authenticate with GitHub through OAuth" in result.data
 
-                # Test get_repository_info - should raise RuntimeError due to token failure
-                try:
-                    await client.call_tool("get_repository_info", {
-                        "owner": "testuser",
-                        "repo": "test-repo"
-                    })
-                    assert False, "Expected RuntimeError to be raised"
-                except Exception as e:
-                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
+                # Test get_repository_info - should return authentication error message
+                result = await client.call_tool("get_repository_info", {
+                    "owner": "testuser",
+                    "repo": "test-repo"
+                })
+                assert "Please authenticate with GitHub through OAuth" in result.data
 
-                # Test get_user_info - should raise RuntimeError due to token failure
-                try:
-                    await client.call_tool("get_user_info", {})
-                    assert False, "Expected RuntimeError to be raised"
-                except Exception as e:
-                    assert "GITHUB_ACCESS_TOKEN environment variable is required" in str(e)
+                # Test get_user_info - should return authentication error message
+                result = await client.call_tool("get_user_info", {})
+                assert "Please authenticate with GitHub through OAuth" in result.data
 
 
 if __name__ == "__main__":
