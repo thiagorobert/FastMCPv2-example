@@ -22,33 +22,25 @@ Compare and contrast three different authorization server approaches:
 ## Architecture Overview
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌───────────────────┐
-│   MCP Client    │    │   OAuth Client  │    │   Auth Provider   │
-│   (Claude)      │    │   (client.py)   │    │  (Auth0/KC/Local) │
-└─────────────────┘    └─────────────────┘    └───────────────────┘
-         │                       │                       │
-         │                       │ 1. Dynamic Client     │
-         │                       │    Registration       │
-         │                       │──────────────────────►│
-         │                       │                       │
-         │                       │ 2. OAuth Flow         │
-         │                       │◄─────────────────────►│
-         │                       │                       │
-         │ 3. MCP Tools          │ 4. Authenticated      │
-         │    (with JWT)         │    API Calls          │
-         │──────────────────────────────────────────────►│
-         │                                               │
-         │                  MCP Server                   │
-         │               (mcp_server.py)                 │
-         └───────────────────────────────────────────────┘
+┌─────────────────┐    ┌─────────────────────────┐    ┌─────────────────┐
+│   MCP Client    │    │      Auth Provider      │    │   MCP Server    │
+│   (client.py)   │    │ (Auth0/Keycloack/Local) │    │ (mcp_server.py) │
+└─────────────────┘    └─────────────────────────┘    └─────────────────┘
+         │                          │                          │
+         │ 1. Dynamic Client        │                          │
+         │     Registration         │                          │
+         │─────────────────────────►│                          │
+         │                          │                          │
+         │ 2. OAuth Flow            │                          │
+         │◄────────────────────────►│                          │
+         │                                                     │
+         │                                                     │
+         │ 3. Authenticated calls to MCP Tools                 │
+         │            (with JWT)                               │
+         │────────────────────────────────────────────────────►│
 ```
 
 ## Quick Start
-
-### Prerequisites
-- Python 3.12+
-- GitHub Personal Access Token
-- Docker (optional, for Keycloak)
 
 ### 1. Setup
 ```bash
@@ -73,7 +65,7 @@ Experience the full flow with zero external dependencies:
 uv run python local_auth_server.py
 
 # Terminal 2: Start MCP server  
-./run_asgi.sh --http --auth-provider local
+./run_asgi.sh --auth-provider local
 
 # Terminal 3: Run OAuth client demo
 uv run client.py
@@ -111,10 +103,12 @@ uv run client.py
 ```
 
 ### 3. Test MCP Integration using Claude CLI
+Test direct MCP invocation from Claude CLI:
 ```bash
 # Use with Claude CLI or other MCP clients
 ./test_mcp_using_claude.sh
 ```
+In this flow there is no Dynamic Client Registration or OAuth authentication. Claude CLI runs the MCP server and connects to it via `stdio` transport.
 
 ## Key Learning Components
 
@@ -174,6 +168,7 @@ After exploring this repository, you'll understand:
 - Implement token refresh and revocation flows
 - Explore Auth0 Rules or Keycloak custom authenticators
 - Deploy the local OAuth server as a reusable microservice
+- Can OAuth Token Exchange (rfc8693) be used to avoid having to preconfigure the MCP Server with a Github access token?
 
 ## Resources
 

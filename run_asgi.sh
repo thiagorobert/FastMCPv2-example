@@ -3,8 +3,8 @@
 set -e
 
 # Default values
-PROTOCOL="https"
-AUTH_PROVIDER=""
+PROTOCOL="http"
+AUTH_PROVIDER="local"
 
 # Parse arguments
 while [ $# -gt 0 ]; do
@@ -36,9 +36,9 @@ while [ $# -gt 0 ]; do
             echo "  --auth-provider PROVIDER    Set auth provider (auth0|keycloak)"
             echo ""
             echo "Examples:"
-            echo "  $0                          # HTTPS with default auth provider"
-            echo "  $0 http                     # HTTP with default auth provider"
-            echo "  $0 --auth-provider keycloak # HTTPS with Keycloak"
+            echo "  $0                          # HTTP with default auth provider (local)"
+            echo "  $0 https                    # HTTPS with default auth provider (local)"
+            echo "  $0 --auth-provider keycloak # HTTP with Keycloak"
             echo "  $0 http --auth-provider keycloak # HTTP with Keycloak"
             exit 0
             ;;
@@ -69,4 +69,3 @@ else
         --host 127.0.0.1 \
         --port 8080
 fi
-
