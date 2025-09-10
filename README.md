@@ -24,7 +24,7 @@ Compare and contrast three different authorization server approaches:
 ```
 ┌─────────────────┐    ┌─────────────────────────┐    ┌─────────────────┐
 │   MCP Client    │    │      Auth Provider      │    │   MCP Server    │
-│   (client.py)   │    │ (Auth0/Keycloack/Local) │    │ (mcp_server.py) │
+│   (client.py)   │    │ (Auth0/Keycloak/Local)  │    │ (mcp_server.py) │
 └─────────────────┘    └─────────────────────────┘    └─────────────────┘
          │                          │                          │
          │ 1. Dynamic Client        │                          │
@@ -176,3 +176,27 @@ After exploring this repository, you'll understand:
 - [RFC 7591 - OAuth 2.0 Dynamic Client Registration](https://tools.ietf.org/html/rfc7591)
 - [RFC 7636 - PKCE](https://tools.ietf.org/html/rfc7636)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
+   * [Authorization section](https://modelcontextprotocol.io/specification/draft/basic/authorization)
+- [An introduction to MCP and Auth](https://auth0.com/blog/an-introduction-to-mcp-and-authorization/)
+   * I found this article after implementing the example in this repo, and wish I had found it before (but would likely not have appreciated it as much)
+- [Open issue: Treat the MCP as RS rather than AS ](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205)
+   * This proposal is similar to how I implemented the example in this repo
+- [MCP Auth](https://mcp-auth.dev/)
+   * A library to ease implementation of auth for MCPs, including integration with several providers
+
+### List of Auth providers
+
+* [Okta](https://www.okta.com/)
+   * owns Auth0
+* [Auth0](https://auth0.com)
+* [Keycloak](https://keycloak.org)
+* [Frontegg](https://frontegg.com)
+* [Descope](https://descope.com)
+* [FusionAuth](https://fusionauth.io)
+* [WorkOS](https://workos.com)
+* [Entra ID](https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id)
+* [Stytch](https://stytch.com)
+* [Logto](https://logto.io/)
+* [WSO2](https://wso2.com)
+   * [Asgardeo](https://wso2.com/asgardeo/)
+   * [Identity Server](https://wso2.com/identity-server/)
