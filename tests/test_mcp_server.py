@@ -3,6 +3,10 @@ import json
 import tempfile
 import os
 from unittest.mock import AsyncMock, patch, MagicMock
+
+# Set environment variable before importing modules to avoid assertion errors
+os.environ.setdefault("GITHUB_ACCESS_TOKEN", "test_token_for_hermetic_tests")
+
 from fastmcp import Client
 from mcp_server import mcp
 from github_api import make_github_request, load_token

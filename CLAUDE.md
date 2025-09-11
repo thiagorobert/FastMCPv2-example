@@ -50,8 +50,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `auth_provider.py`: Abstracted OAuth authentication logic for Auth0, Keycloak, and Local providers
 - `local_auth_server.py`: Local OAuth 2.1 compliant authorization server for development and testing
 - `github_api.py`: GitHub API integration with token handling and HTTP client management
-- `test_mcp_server.py`: Comprehensive unit tests using FastMCP's in-memory testing
-- `test_local_auth_server.py`: Comprehensive unit tests for the local OAuth server (99% coverage)
+- `tests/test_mcp_server.py`: Comprehensive unit tests using FastMCP's in-memory testing
+- `tests/test_local_auth_server.py`: Comprehensive unit tests for the local OAuth server (99% coverage)
 - `client.py`: RFC 7591-compliant OAuth client for testing dynamic client registration
 - `mcp_config.json`: MCP client configuration for testing with Claude CLI
 - `.env`: Environment variables file (contains sensitive tokens)
@@ -94,12 +94,12 @@ Key dependencies from `pyproject.toml`:
 ## Development Commands
 
 ### Unit testing
-- Run all tests: `uv run pytest`
-- Run MCP server tests: `uv run pytest test_mcp_server.py`
-- Run OAuth server tests: `uv run pytest test_local_auth_server.py`
-- Run specific test: `uv run pytest test_mcp_server.py::TestFastMCPv2Example::test_load_token_success`
-- Run with coverage: `uv run pytest test_mcp_server.py --cov=mcp_server --cov-report=term-missing`
-- Run OAuth tests with coverage: `uv run pytest test_local_auth_server.py --cov=local_auth_server --cov-report=term-missing`
+- Run all tests: `uv run pytest tests/`
+- Run MCP server tests: `uv run pytest tests/test_mcp_server.py`
+- Run OAuth server tests: `uv run pytest tests/test_local_auth_server.py`
+- Run specific test: `uv run pytest tests/test_mcp_server.py::TestFastMCPv2Example::test_load_token_success`
+- Run with coverage: `uv run pytest tests/test_mcp_server.py --cov=mcp_server --cov-report=term-missing`
+- Run OAuth tests with coverage: `uv run pytest tests/test_local_auth_server.py --cov=local_auth_server --cov-report=term-missing`
 
 ### Code Quality
 - Lint code: `uv run ruff check .`
