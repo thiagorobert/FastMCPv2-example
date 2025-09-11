@@ -93,7 +93,7 @@ uv run src/client.py
 
 **What happens:**
 1. `client.py` registers a new OAuth client dynamically
-2. Performs PKCE-enhanced OAuth flow with the local server
+2. Performs PKCE-enhanced OAuth flow with the local OAuth server
 3. Uses the JWT token to call authenticated MCP tools
 4. Fetches your GitHub repositories via the MCP server
 
@@ -110,7 +110,7 @@ uv run src/client.py
 ### 🔧 **Keycloak Setup**
 1. Start Keycloak:
 ```bash
-docker run -p 8081:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.4 start-dev
+podman run -p 8081:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.4 start-dev
 ```
 2. Follow the [Keycloak setup guide](docs/keycloak-rfc7591.md) to configure your Keycloak environment
 3. Run the demo:
