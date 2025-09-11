@@ -132,11 +132,10 @@ uv run src/client.py
 - [RFC 7591 - OAuth 2.0 Dynamic Client Registration](https://tools.ietf.org/html/rfc7591)
 - [RFC 7636 - PKCE](https://tools.ietf.org/html/rfc7636)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
-  * [Authorization section](https://modelcontextprotocol.io/specification/draft/basic/authorization)
+  * [Authorization section](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
+     * [Auth Server Discovery](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#authorization-server-discovery)
 - [An introduction to MCP and Auth](https://auth0.com/blog/an-introduction-to-mcp-and-authorization/)
   * I found this article after implementing the example in this repo, and I wish I had found it before (but would likely not have appreciated it as much)
-- [Open issue: Treat the MCP as RS rather than AS ](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205)
-  * This proposal is similar to how I implemented the example in this repo
 - [MCP Auth](https://mcp-auth.dev/)
   * A library to ease implementation of auth for MCPs, including integration with several providers
 
