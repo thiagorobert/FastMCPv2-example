@@ -6,20 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Components
 
-**FastMCP Server (`mcp_server.py`)**
+**FastMCP Server (`src/mcp_server.py`)**
 - Built on FastMCP v2 framework for creating MCP (Model Context Protocol) servers
 - Provides GitHub API integration via OAuth token authentication
 - Exposes 3 main MCP tools: `list_repositories`, `get_repository_info`, `get_user_info`
 - Dual transport support: stdio (for MCP clients) and HTTPS/ASGI (web API)
-- HTTPS support with TLS certificates from `tls_data/` directory
+- HTTPS support with TLS certificates from `data/tls/` directory
 - Configurable auth provider support: Auth0 (default), Keycloak, or Local OAuth server via `AUTH_PROVIDER` environment variable
 
-**Auth Provider Module (`auth_provider.py`)**
+**Auth Provider Factory Module (`src/auth_provider_factory.py`)**
 - Abstracted OAuth authentication logic for Auth0, Keycloak, and Local OAuth providers
 - Factory pattern for creating appropriate auth providers based on configuration
 - Centralized OAuth metadata URL generation
 
-**Local OAuth Server (`local_auth_server.py`)**
+**Local OAuth Server (`src/local_auth_server.py`)**
 - Full OAuth 2.1 compliant authorization server for local development and testing
 - JWT access token generation with RS256 signing
 - Dynamic Client Registration (RFC 7591) support
@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Resource Indicators and Authorization Server Metadata (RFC 8414) support
 - Multiple key export formats: JWKS, single JWK, and PEM for testing tools like jwt.io
 
-**GitHub API Module (`github_api.py`)**
+**GitHub API Module (`src/github_api.py`)**
 - GitHub API integration with token handling and HTTP client management
 - Environment variable-based token loading with python-dotenv support
 - API request functions with error handling
@@ -46,18 +46,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Key Files
 
-- `mcp_server.py`: Main MCP server implementation
-- `auth_provider.py`: Abstracted OAuth authentication logic for Auth0, Keycloak, and Local providers
-- `local_auth_server.py`: Local OAuth 2.1 compliant authorization server for development and testing
-- `github_api.py`: GitHub API integration with token handling and HTTP client management
+- `src/mcp_server.py`: Main MCP server implementation
+- `src/auth_provider_factory.py`: Factory pattern implementation for creating Auth0, Keycloak, and Local OAuth providers
+- `src/local_auth_server.py`: Local OAuth 2.1 compliant authorization server for development and testing
+- `src/github_api.py`: GitHub API integration with token handling and HTTP client management
 - `tests/test_mcp_server.py`: Comprehensive unit tests using FastMCP's in-memory testing
 - `tests/test_local_auth_server.py`: Comprehensive unit tests for the local OAuth server (99% coverage)
-- `client.py`: RFC 7591-compliant OAuth client for testing dynamic client registration
-- `mcp_config.json`: MCP client configuration for testing with Claude CLI
+- `src/client.py`: RFC 7591-compliant OAuth client for testing dynamic client registration
+- `data/claude_mcp_config.json`: MCP client configuration for testing with Claude CLI
 - `.env`: Environment variables file (contains sensitive tokens)
-- `run_asgi.sh`: HTTPS/HTTP server startup script with auth provider selection
-- `start_mcp_inspector.sh`: MCP Inspector startup script for debugging
-- `tls_data/`: Directory containing TLS certificate (`server.crt`) and private key (`server.key`)
+- `scripts/run_asgi.sh`: HTTPS/HTTP server startup script with auth provider selection
+- `scripts/test_mcp_using_claude.sh`: Test script for MCP integration with Claude CLI
+- `data/tls/`: Directory containing TLS certificate (`server.crt`) and private key (`server.key`)
 - `docs/`: Documentation directory with Auth0 and Keycloak RFC 7591 setup guides
   - `auth0-rfc7591.md`: Auth0 setup guide for RFC 7591 dynamic client registration
   - `keycloak-rfc7591.md`: Keycloak setup guide for RFC 7591 dynamic client registration
@@ -72,7 +72,7 @@ Uses FastMCP's [in-memory testing](https://gofastmcp.com/deployment/testing) app
 
 ### MCP Integration
 
-The server can be consumed by MCP clients (like Claude) using the configuration in `mcp_config.json`. The test script `test_mcp_using_claude.sh` demonstrates integration with Claude CLI, forcing tool usage with specific prompts to avoid Claude bypassing the MCP.
+The server can be consumed by MCP clients (like Claude) using the configuration in `data/claude_mcp_config.json`. The test script `scripts/test_mcp_using_claude.sh` demonstrates integration with Claude CLI, forcing tool usage with specific prompts to avoid Claude bypassing the MCP.
 
 ### Environment Setup
 
@@ -107,24 +107,23 @@ Key dependencies from `pyproject.toml`:
 - Check for dead code: `uv run vulture .`
 
 ### Running the MCP server
-- MCP server (stdio): `uv run mcp_server.py`
-- HTTP server: `./run_asgi.sh --http` 
-- HTTPS server: `./run_asgi.sh --https` (default)
-- With Keycloak auth: `./run_asgi.sh --auth-provider keycloak`
-- HTTP with Keycloak: `./run_asgi.sh --http --auth-provider keycloak`
-- With Local OAuth: `./run_asgi.sh --auth-provider local`
-- HTTP with Local OAuth: `./run_asgi.sh --http --auth-provider local`
+- MCP server (stdio): `uv run python -m src.mcp_server`
+- HTTP server: `./scripts/run_asgi.sh` (default, runs with local auth)
+- HTTPS server: `./scripts/run_asgi.sh --https`
+- With Keycloak auth: `./scripts/run_asgi.sh --auth-provider keycloak`
+- HTTPS with Keycloak: `./scripts/run_asgi.sh --https --auth-provider keycloak`
+- With Local OAuth: `./scripts/run_asgi.sh --auth-provider local`
 
 ### Running the Local OAuth Server
 
-- Local OAuth server: `uv run python local_auth_server.py`
+- Local OAuth server: `uv run python src/local_auth_server.py`
 - Runs on port 8001 by default
 - Provides OAuth 2.1 endpoints including JWT token generation
 - Includes debug endpoints for testing: `/publickey` (PEM), `/jwk` (single JWK), `/.well-known/jwks.json`
 
 ### Running the client
 
-- `uv run client.py`
+- `uv run src/client.py`
 - Creates a dynamic client, performs OAuth, and calls the MCP server
 - Works with any configured auth provider (Auth0, Keycloak, or Local)
 
@@ -132,9 +131,9 @@ Key dependencies from `pyproject.toml`:
 
 For local development and testing:
 
-1. **Start Local OAuth Server**: `uv run python local_auth_server.py` (runs on port 8001)
-2. **Start MCP Server with Local Auth**: `./run_asgi.sh --http --auth-provider local` (runs on port 8080)
-3. **Run Client**: `uv run client.py` (connects to both servers)
+1. **Start Local OAuth Server**: `uv run python src/local_auth_server.py` (runs on port 8001)
+2. **Start MCP Server with Local Auth**: `./scripts/run_asgi.sh --http --auth-provider local` (runs on port 8080)
+3. **Run Client**: `uv run src/client.py` (connects to both servers)
 
 The local OAuth server provides JWT tokens that the MCP server validates using the JWKS endpoint at `http://localhost:8001/.well-known/jwks.json`.
 

@@ -69,7 +69,7 @@ cd FastMCPv2-example
 uv sync
 
 # Patch .venv
-./apply_venv_patch.sh
+./scripts/apply_venv_patch.sh
 
 # Configure environment
 cp env.example .env
@@ -82,13 +82,13 @@ Experience the complete flow with zero external dependencies:
 
 ```bash
 # Terminal 1: Start local OAuth server
-uv run python local_auth_server.py
+uv run python src/local_auth_server.py
 
 # Terminal 2: Start MCP server with local auth
-./run_asgi.sh --auth-provider local
+./scripts/run_asgi.sh --auth-provider local
 
 # Terminal 3: Run the dynamic client registration demo
-uv run client.py
+uv run src/client.py
 ```
 
 **What happens:**
@@ -103,8 +103,8 @@ uv run client.py
 1. Follow the [Auth0 setup guide](docs/auth0-rfc7591.md) to configure your Auth0 environment
 2. Run the demo:
 ```bash
-./run_asgi.sh --auth-provider auth0
-uv run client.py
+./scripts/run_asgi.sh --auth-provider auth0
+uv run src/client.py
 ```
 
 ### 🔧 **Keycloak Setup**
@@ -115,14 +115,14 @@ docker run -p 8081:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin
 2. Follow the [Keycloak setup guide](docs/keycloak-rfc7591.md) to configure your Keycloak environment
 3. Run the demo:
 ```bash
-./run_asgi.sh --auth-provider keycloak
-uv run client.py
+./scripts/run_asgi.sh --auth-provider keycloak
+uv run src/client.py
 ```
 
 ## Test MCP Integration with Claude CLI
 ```bash
 # Test direct MCP invocation from Claude CLI
-./test_mcp_using_claude.sh
+./scripts/test_mcp_using_claude.sh
 ```
 *Note: This uses `stdio` transport - no OAuth authentication involved.*
 

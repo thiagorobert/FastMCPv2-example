@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, patch, MagicMock
 os.environ.setdefault("GITHUB_ACCESS_TOKEN", "test_token_for_hermetic_tests")
 
 from fastmcp import Client
-from mcp_server import mcp
-from github_api import make_github_request, load_token
+from src.mcp_server import mcp
+from src.github_api import make_github_request, load_token
 
 
 class TestFastMCPv2Example:
@@ -115,7 +115,7 @@ class TestFastMCPv2Example:
     async def test_list_repositories_tool(self, mock_token_file, mock_github_api_response):
         """Test list_repositories tool using in-memory testing."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_repos"]
 
                 # Use in-memory testing with FastMCP Client
@@ -134,7 +134,7 @@ class TestFastMCPv2Example:
     async def test_list_repositories_no_data(self, mock_token_file):
         """Test list_repositories tool when no data is returned."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
 
                 async with Client(mcp) as client:
@@ -148,7 +148,7 @@ class TestFastMCPv2Example:
     async def test_get_repository_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_repository_info tool using in-memory testing."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["repo_info"]
 
                 async with Client(mcp) as client:
@@ -169,7 +169,7 @@ class TestFastMCPv2Example:
     async def test_get_repository_info_no_data(self, mock_token_file):
         """Test get_repository_info tool when no data is returned."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
 
                 async with Client(mcp) as client:
@@ -186,7 +186,7 @@ class TestFastMCPv2Example:
     async def test_get_user_info_tool(self, mock_token_file, mock_github_api_response):
         """Test get_user_info tool using in-memory testing."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = mock_github_api_response["user_info"]
 
                 async with Client(mcp) as client:
@@ -204,7 +204,7 @@ class TestFastMCPv2Example:
     async def test_get_user_info_no_data(self, mock_token_file):
         """Test get_user_info tool when no data is returned."""
         with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "test_token_123"}):
-            with patch('github_api.make_github_request') as mock_request:
+            with patch('src.github_api.make_github_request') as mock_request:
                 mock_request.return_value = None
 
                 async with Client(mcp) as client:

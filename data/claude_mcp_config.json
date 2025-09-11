@@ -6,7 +6,9 @@
 				"--directory",
 				"/workspace/github/FastMCPv2-example",
 				"run",
-				"mcp_server.py"
+				"python",
+				"-m",
+				"src.mcp_server"
 			]
 		}
 	}

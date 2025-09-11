@@ -2,8 +2,8 @@ import os
 from fastmcp import FastMCP
 import logging
 from starlette.responses import JSONResponse
-from auth_provider import AuthProvider, AuthProviderFactory
-import github_api
+from .auth_provider_factory import AuthProvider, AuthProviderFactory
+from . import github_api
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
